@@ -8,7 +8,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.gridlayer.googlemutant@0.12.1/Leaflet.GoogleMutant.js"></script>
   <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?libraries=places"></script>
+  <script src="/maps-api.js"></script>
+
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -96,70 +97,74 @@
       });
 
     function consultarViabilidade() {
-      const bairro = document.getElementById("bairro").value.trim();
-      const cidade = document.getElementById("cidade").value.trim();
-      const endereco = document.getElementById("endereco").value.trim();
-      const coordenadas = document.getElementById("coordenadas").value.trim();
-      const resultadoDiv = document.getElementById("resultado");
+  const bairro = document.getElementById("bairro").value.trim();
+  const cidade = document.getElementById("cidade").value.trim();
+  const endereco = document.getElementById("endereco").value.trim();
+  const coordenadas = document.getElementById("coordenadas").value.trim();
+  const resultadoDiv = document.getElementById("resultado");
 
-      if (!bairro || !cidade || !endereco) {
-        resultadoDiv.innerHTML = '<p style="color: orange;">Preencha todos os campos.</p>';
-        return;
+  if (!bairro || !cidade || (!coordenadas && !endereco)) {
+    resultadoDiv.innerHTML = '<p style="color: orange;">Preencha bairro, cidade e pelo menos um dos campos: coordenadas ou endereço.</p>';
+    return;
+  }
+
+  let lat = null, lon = null, enderecoLat = null, enderecoLon = null, divergente = false;
+  const enderecoCompleto = `${endereco}, ${bairro}, ${cidade}`;
+  const geocodeUrl = `/geocode?address=${encodeURIComponent(enderecoCompleto)}`;
+
+  // Se o usuário inseriu coordenadas válidas, priorizamos elas
+  if (coordenadas && /^-?\d+(\.\d+)?[ ,]+-?\d+(\.\d+)?$/.test(coordenadas)) {
+    const parts = coordenadas.split(/[ ,]+/).map(Number);
+    lat = parts[0];
+    lon = parts[1];
+  }
+
+  // Sempre tenta consultar o endereço para verificar divergência
+  fetch(geocodeUrl)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.results || data.results.length === 0) {
+        resultadoDiv.innerHTML = '<p style="color: orange;">Endereço não encontrado para comparação.</p>';
+      } else {
+        enderecoLat = data.results[0].geometry.location.lat;
+        enderecoLon = data.results[0].geometry.location.lng;
+
+        if (lat !== null && lon !== null) {
+          const distancia = turf.distance(
+            turf.point([lon, lat]),
+            turf.point([enderecoLon, enderecoLat]),
+            { units: "kilometers" }
+          );
+          if (distancia > 0.3) divergente = true;
+        } else {
+          // Se não tiver coordenadas, usamos o endereço como base
+          lat = enderecoLat;
+          lon = enderecoLon;
+        }
       }
 
-      let lat = null, lon = null, enderecoLat = null, enderecoLon = null, divergente = false;
-      const enderecoCompleto = `${endereco}, ${bairro}, ${cidade}`;
-      const geocodeUrl = `/geocode?address=${encodeURIComponent(enderecoCompleto)}`;
+      const ponto = turf.point([lon, lat]);
+      const viavel = geojsonCobertura.features.some(f => turf.booleanPointInPolygon(ponto, f));
 
-      fetch(geocodeUrl)
-        .then(res => res.json())
-        .then(data => {
-          if (!data.results || data.results.length === 0) {
-            resultadoDiv.innerHTML = '<p style="color: orange;">Endereço não encontrado.</p>';
-            return;
-          }
+      map.setView([lat, lon], 15);
+      L.marker([lat, lon]).addTo(map);
 
-          enderecoLat = data.results[0].geometry.location.lat;
-          enderecoLon = data.results[0].geometry.location.lng;
+      let resultadoTexto = "";
+      if (divergente)
+        resultadoTexto += '<p style="color: red;">A localização não está de acordo com o endereço, favor corrigir a informação.</p>';
+      resultadoTexto += viavel
+        ? '<p style="color: green;">Cobertura disponível nesse local.</p>'
+        : '<p style="color: red;">Sem cobertura nesse local.</p>';
 
-          if (coordenadas && /^-?\d+(\.\d+)?[ ,]+-?\d+(\.\d+)?$/.test(coordenadas)) {
-            const parts = coordenadas.split(/[ ,]+/).map(Number);
-            lat = parts[0];
-            lon = parts[1];
-            const distancia = turf.distance(
-              turf.point([lon, lat]),
-              turf.point([enderecoLon, enderecoLat]),
-              { units: "kilometers" }
-            );
-            if (distancia > 0.3) divergente = true;
-          } else {
-            lat = enderecoLat;
-            lon = enderecoLon;
-          }
+      resultadoDiv.innerHTML = resultadoTexto;
 
-          const ponto = turf.point([lon, lat]);
-          const viavel = geojsonCobertura.features.some(f => turf.booleanPointInPolygon(ponto, f));
-
-          map.setView([lat, lon], 15);
-          L.marker([lat, lon]).addTo(map);
-
-          let resultadoTexto = "";
-          if (divergente)
-            resultadoTexto += '<p style="color: red;">A localização não está de acordo com o endereço, favor corrigir a informação.</p>';
-          resultadoTexto += viavel
-            ? '<p style="color: green;">Cobertura disponível nesse local.</p>'
-            : '<p style="color: red;">Sem cobertura nesse local.</p>';
-
-          resultadoDiv.innerHTML = resultadoTexto;
-
-          historicoConsultas.push({ bairro, cidade, endereco, lat, lon, viavel, divergente });
-        })
-        .catch(err => {
-          resultadoDiv.innerHTML = '<p style="color: orange;">Erro ao consultar a API do Google Maps.</p>';
-          console.error(err);
-        });
-    }
-
+      historicoConsultas.push({ bairro, cidade, endereco, lat, lon, viavel, divergente });
+    })
+    .catch(err => {
+      resultadoDiv.innerHTML = '<p style="color: orange;">Erro ao consultar a API do Google Maps.</p>';
+      console.error(err);
+    });
+}
     function gerarRelatorio() {
       const agregados = {};
       historicoConsultas.forEach(c => {
