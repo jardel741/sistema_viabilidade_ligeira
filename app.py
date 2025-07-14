@@ -1,6 +1,8 @@
 from flask import Flask, render_template, jsonify, request, send_from_directory
 import requests
 import os
+from dotenv import load_dotenv
+
 if os.environ.get("RENDER") is None:
     try:
         from dotenv import load_dotenv
