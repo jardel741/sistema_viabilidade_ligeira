@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Consulta de Viabilidade Ligeira Telecom</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -10,9 +11,6 @@
   <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
   <script src="/maps-api.js"></script>
 
-
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     #map { height: 400px; margin-top: 20px; width: 100%; }
@@ -25,129 +23,135 @@
   </style>
 </head>
 <body>
-  <div id="debug" style="background: #eee; padding: 10px; font-family: monospace; margin-bottom: 20px;"></div>
 
   <img src="https://i.imgur.com/LcNQHQ4.png" alt="Logo Ligeira Telecom" style="max-width: 250px; display: block; margin-bottom: 10px;" />
   <h2>Consulta de Viabilidade Ligeira Telecom</h2>
+
   <input type="text" id="bairro" placeholder="Digite o bairro" />
   <input type="text" id="cidade" placeholder="Digite a cidade" />
-  <input type="text" id="endereco" placeholder="Digite o endereço ou coordenadas" />
-  <input type="text" id="coordenadas" placeholder="Cole aqui a localização compartilhada (latitude, longitude)" />
+  <input type="text" id="endereco" placeholder="Digite o endereço" />
+  <input type="text" id="coordenadas" placeholder="Cole aqui a localização (latitude, longitude)" />
   <button onclick="usarMinhaLocalizacao()">📍 Usar minha localização atual</button>
-  <button onclick="consultarViabilidade()">Consultar</button>
   <div id="resultado"></div>
   <div id="map"></div>
 
-  <div id="relatorio">
-    <h3>Relatório de Consultas</h3>
-    <button onclick="gerarRelatorio()">Gerar Relatório</button>
-    <a id="downloadCsv" class="download-link" style="display: none">Baixar CSV</a>
-    <div id="tabela-relatorio"></div>
-  </div>
+  <script>
+    const map = L.map("map").setView([-7.2, -39.3], 13);
+    let marcadorEndereco = null;
+    let marcadorCoordenada = null;
+    let geojsonCobertura;
 
-<script>
-  const historicoConsultas = [];
-  const map = L.map("map").setView([-7.2, -39.3], 13);
-
-  let marcadorEndereco = null;
-  let marcadorCoordenada = null;
-  let geojsonCobertura;
-
-  try {
-    L.gridLayer.googleMutant({ maxZoom: 24, type: "satellite" }).addTo(map);
-  } catch {
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-  }
-
-  fetch("geojson")
-    .then(res => res.json())
-    .then(data => {
-      geojsonCobertura = data;
-      const layer = L.geoJSON(data, {
-        style: { color: "blue", weight: 2, fillOpacity: 0.1 }
-      }).addTo(map);
-      map.fitBounds(layer.getBounds());
+    const iconeAmarelo = new L.Icon({
+      iconUrl: "https://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32]
     });
 
-  function marcarEndereco() {
-    const endereco = document.getElementById("endereco").value.trim();
-    const bairro = document.getElementById("bairro").value.trim();
-    const cidade = document.getElementById("cidade").value.trim();
-    const full = `${endereco}, ${bairro}, ${cidade}`;
-    if (!endereco || !bairro || !cidade) return;
+    const iconeVerde = new L.Icon({
+      iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32]
+    });
 
-    fetch(`/geocode?address=${encodeURIComponent(full)}`)
+    try {
+      L.gridLayer.googleMutant({ maxZoom: 24, type: "satellite" }).addTo(map);
+    } catch {
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+    }
+
+    fetch("/geojson")
       .then(res => res.json())
       .then(data => {
-        if (!data.results || data.results.length === 0) return;
-        const loc = data.results[0].geometry.location;
-        if (marcadorEndereco) map.removeLayer(marcadorEndereco);
-        marcadorEndereco = L.marker([loc.lat, loc.lng], { icon: iconeAmarelo }).addTo(map)
-          .bindPopup("📍 Endereço digitado").openPopup();
-        map.setView([loc.lat, loc.lng], 15);
-        document.getElementById("endereco").dataset.lat = loc.lat;
-        document.getElementById("endereco").dataset.lng = loc.lng;
-        diagnosticar();
+        geojsonCobertura = data;
+        const layer = L.geoJSON(data, {
+          style: { color: "blue", weight: 2, fillOpacity: 0.1 }
+        }).addTo(map);
+        map.fitBounds(layer.getBounds());
       });
-  }
 
-  function diagnosticar() {
-    const coordText = document.getElementById("coordenadas").value.trim();
-    const enderecoLat = parseFloat(document.getElementById("endereco").dataset.lat);
-    const enderecoLng = parseFloat(document.getElementById("endereco").dataset.lng);
-    const resultadoDiv = document.getElementById("resultado");
+    function marcarEndereco() {
+      const endereco = document.getElementById("endereco").value.trim();
+      const bairro = document.getElementById("bairro").value.trim();
+      const cidade = document.getElementById("cidade").value.trim();
+      if (!endereco || !bairro || !cidade) return;
 
-    if (!coordText || isNaN(enderecoLat) || isNaN(enderecoLng)) return;
+      const full = `${endereco}, ${bairro}, ${cidade}`;
 
-    const parts = coordText.split(/[ ,]+/).map(Number);
-    const [lat, lng] = parts;
-    if (isNaN(lat) || isNaN(lng)) return;
+      fetch(`/geocode?address=${encodeURIComponent(full)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.results?.length) return;
+          const loc = data.results[0].geometry.location;
 
-    if (marcadorCoordenada) map.removeLayer(marcadorCoordenada);
-    marcadorCoordenada = L.marker([lat, lng], { icon: iconeVerde }).addTo(map)
-      .bindPopup("📍 Coordenada fornecida").openPopup();
-    map.setView([lat, lng], 15);
+          if (marcadorEndereco) map.removeLayer(marcadorEndereco);
+          marcadorEndereco = L.marker([loc.lat, loc.lng], { icon: iconeAmarelo })
+            .addTo(map).bindPopup("📍 Endereço digitado").openPopup();
 
-    const ponto = turf.point([lng, lat]);
-    const viavel = geojsonCobertura.features.some(f => turf.booleanPointInPolygon(ponto, f));
-    const distancia = turf.distance(
-      turf.point([enderecoLng, enderecoLat]),
-      turf.point([lng, lat]),
-      { units: "kilometers" }
-    );
+          map.setView([loc.lat, loc.lng], 15);
+          document.getElementById("endereco").dataset.lat = loc.lat;
+          document.getElementById("endereco").dataset.lng = loc.lng;
 
-    let resultado = "";
-    if (distancia > 0.3) {
-      resultado += '<p style="color: red;">A localização não está de acordo com o endereço, favor corrigir a informação.</p>';
+          diagnosticar();
+        });
     }
-    resultado += viavel
-      ? '<p style="color: green;">Cobertura disponível nesse local.</p>'
-      : '<p style="color: red;">Sem cobertura nesse local.</p>';
 
-    resultadoDiv.innerHTML = resultado;
-  }
+    function diagnosticar() {
+      const coordText = document.getElementById("coordenadas").value.trim();
+      const enderecoLat = parseFloat(document.getElementById("endereco").dataset.lat || "NaN");
+      const enderecoLng = parseFloat(document.getElementById("endereco").dataset.lng || "NaN");
+      const resultadoDiv = document.getElementById("resultado");
 
-  const iconeAmarelo = new L.Icon({
-    iconUrl: "https://chart.googleapis.com/chart?chst=d_map_pin_icon&chld=home|FFFF00",
-    iconSize: [21, 34],
-    iconAnchor: [10, 34],
-    popupAnchor: [1, -34]
-  });
+      if (!coordText || isNaN(enderecoLat) || isNaN(enderecoLng)) return;
 
-  const iconeVerde = new L.Icon({
-    iconUrl: "https://chart.googleapis.com/chart?chst=d_map_pin_icon&chld=flag|00FF00",
-    iconSize: [21, 34],
-    iconAnchor: [10, 34],
-    popupAnchor: [1, -34]
-  });
+      const [lat, lng] = coordText.split(/[ ,]+/).map(Number);
+      if (isNaN(lat) || isNaN(lng)) return;
 
-  document.getElementById("endereco").addEventListener("blur", marcarEndereco);
-  document.getElementById("coordenadas").addEventListener("input", diagnosticar);
-</script>
+      if (marcadorCoordenada) map.removeLayer(marcadorCoordenada);
+      marcadorCoordenada = L.marker([lat, lng], { icon: iconeVerde })
+        .addTo(map).bindPopup("📍 Coordenada fornecida").openPopup();
 
+      map.setView([lat, lng], 15);
+
+      const ponto = turf.point([lng, lat]);
+      const viavel = geojsonCobertura.features.some(f => turf.booleanPointInPolygon(ponto, f));
+
+      const distancia = turf.distance(
+        turf.point([enderecoLng, enderecoLat]),
+        turf.point([lng, lat]),
+        { units: "kilometers" }
+      );
+
+      let resultado = "";
+      if (distancia > 0.3) {
+        resultado += `<p style="color: red;">A localização não está de acordo com o endereço, favor corrigir a informação.</p>`;
+      }
+      resultado += viavel
+        ? `<p style="color: green;">Cobertura disponível nesse local.</p>`
+        : `<p style="color: red;">Sem cobertura nesse local.</p>`;
+
+      resultadoDiv.innerHTML = resultado;
+    }
+
+    function usarMinhaLocalizacao() {
+      if (!navigator.geolocation) return alert("Geolocalização não suportada.");
+      navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude.toFixed(6);
+        const lng = pos.coords.longitude.toFixed(6);
+        document.getElementById("coordenadas").value = `${lat}, ${lng}`;
+        diagnosticar();
+      }, err => alert("Erro ao obter localização: " + err.message));
+    }
+
+    // Eventos
+    document.getElementById("endereco").addEventListener("blur", marcarEndereco);
+    document.getElementById("coordenadas").addEventListener("input", diagnosticar);
+  </script>
 
   <footer style="text-align: center; margin-top: 40px; font-size: 0.9em; color: #666">
     &copy; 2025 Designed by Carlos Jardel e OpenAI
   </footer>
+
 </body>
 </html>
