@@ -7,7 +7,6 @@ if os.environ.get("RENDER") is None:
     from dotenv import load_dotenv
     load_dotenv()
 
-
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -19,21 +18,6 @@ def home():
 @app.route('/geojson')
 def geojson():
     return send_from_directory('static', 'atuacao_link_cariri.geojson', mimetype='application/json')
-
-@app.route('/geocode')
-def geocode():
-    address = request.args.get("address")
-    if not address:
-        return jsonify({"error": "Endereço ausente"}), 400
-
-    url = "https://maps.googleapis.com/maps/api/geocode/json"
-    params = {
-        "address": address,
-        "key": GOOGLE_API_KEY
-    }
-
-    response = requests.get(url, params=params)
-    return jsonify(response.json())
 
 @app.route('/maps-api.js')
 def maps_api():
@@ -56,7 +40,6 @@ def geocode():
 
     response = requests.get(url, params=params)
     return jsonify(response.json())
-
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
