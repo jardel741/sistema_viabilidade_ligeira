@@ -41,6 +41,23 @@ def maps_api():
 script.src = "https://maps.googleapis.com/maps/api/js?key={GOOGLE_API_KEY}&libraries=places";
 document.head.appendChild(script);""", 200, {'Content-Type': 'application/javascript'}
 
+@app.route('/geocode')
+def geocode():
+    address = request.args.get("address")
+    latlng = request.args.get("latlng")
+    url = "https://maps.googleapis.com/maps/api/geocode/json"
+
+    if address:
+        params = { "address": address, "key": GOOGLE_API_KEY }
+    elif latlng:
+        params = { "latlng": latlng, "key": GOOGLE_API_KEY }
+    else:
+        return jsonify({ "error": "Parâmetros ausentes" }), 400
+
+    response = requests.get(url, params=params)
+    return jsonify(response.json())
+
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
