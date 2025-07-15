@@ -1,16 +1,12 @@
+import os
 from flask import Flask, render_template, jsonify, request, send_from_directory
 import requests
-import os
 
-# Carrega variáveis de ambiente do .env localmente
+# Só carrega dotenv localmente
 if os.environ.get("RENDER") is None:
-    try:
-        from dotenv import load_dotenv
-        load_dotenv()
-    except:
-        pass
+    from dotenv import load_dotenv
+    load_dotenv()
 
-load_dotenv()
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
