@@ -175,14 +175,14 @@
     }
 
     fetch("/geojson")
-      .then(res => res.json())
-      .then(data => {
-        geojsonCobertura = data;
-        const layer = L.geoJSON(data, {
-          style: { color: "blue", weight: 2, fillOpacity: 0.1 }
-        }).addTo(map);
-        map.fitBounds(layer.getBounds());
-      });
+  .then(res => res.json())
+  .then(data => {
+    geojsonCobertura = data;
+    // Opcional: ainda define o bounds da área mesmo sem mostrar
+    const layer = L.geoJSON(data);
+    map.fitBounds(layer.getBounds());
+    // OBS: layer NÃO é adicionado ao mapa!
+  });
 
     function marcarEndereco() {
       const endereco = document.getElementById("endereco").value.trim();
