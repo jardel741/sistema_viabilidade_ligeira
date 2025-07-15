@@ -2,7 +2,7 @@ from flask import Flask, render_template, jsonify, request, send_from_directory
 import requests
 import os
 
-# Carrega variáveis de ambiente do .env
+# Carrega variáveis de ambiente do .env localmente
 if os.environ.get("RENDER") is None:
     try:
         from dotenv import load_dotenv
@@ -14,7 +14,6 @@ load_dotenv()
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
-# Chave da API via variável de ambiente
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 @app.route('/')
