@@ -12,34 +12,140 @@
   <script src="/maps-api.js"></script>
 
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    #map { height: 400px; margin-top: 20px; width: 100%; }
-    input, button, select { padding: 8px; margin-top: 10px; width: 100%; }
-    #relatorio { margin-top: 40px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
-    .download-link { display: inline-block; margin-top: 10px; color: blue; text-decoration: underline; cursor: pointer; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background-color: #FFC107;
+      color: #333;
+    }
+
+    header {
+      background: #6200EA;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      flex-wrap: wrap;
+    }
+
+    header img {
+      max-height: 60px;
+    }
+
+    header .btn-verde {
+      background: #00C853;
+      border: none;
+      padding: 10px 20px;
+      color: white;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+    }
+
+    h2 {
+      text-align: center;
+      margin: 30px 10px 10px;
+      font-size: 2rem;
+    }
+
+    .container {
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    input, button, select {
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    button {
+      cursor: pointer;
+      background-color: #6200EA;
+      color: white;
+      border: none;
+      font-weight: bold;
+    }
+
+    #map {
+      height: 400px;
+      margin-top: 20px;
+      width: 100%;
+      border-radius: 8px;
+      border: 2px solid #6200EA;
+    }
+
+    #resultado {
+      margin-top: 20px;
+      font-size: 1.1rem;
+    }
+
+    #relatorio {
+      margin-top: 40px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #eee;
+    }
+
+    .download-link {
+      display: inline-block;
+      margin-top: 10px;
+      color: blue;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    footer {
+      background: #6200EA;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      margin-top: 50px;
+    }
   </style>
 </head>
 <body>
 
-  <img src="https://imgur.com/iV8IyG9" alt="Logo Ligeira Telecom" style="max-width: 250px; display: block; margin-bottom: 10px;" />
-  <h2>Consulta de Viabilidade Ligeira Telecom</h2>
+  <header>
+    <img src="https://i.imgur.com/LcNQHQ4.png" alt="Logo Ligeira Telecom" />
+    <button class="btn-verde">Assine pelo WhatsApp</button>
+  </header>
 
-  <input type="text" id="bairro" placeholder="Digite o bairro" />
-  <input type="text" id="cidade" placeholder="Digite a cidade" />
-  <input type="text" id="endereco" placeholder="Digite o endereço" />
-  <input type="text" id="coordenadas" placeholder="Cole aqui a localização (latitude, longitude)" />
-  <button onclick="usarMinhaLocalizacao()">📍 Usar minha localização atual</button>
-  <div id="resultado"></div>
-  <div id="map"></div>
+  <div class="container">
+    <h2>Consulta de Viabilidade Ligeira Telecom</h2>
 
-  <div id="relatorio">
-    <h3>Relatório de Viabilidades</h3>
-    <button onclick="mostrarRelatorio()">📊 Ver relatório</button>
-    <div id="tabelaRelatorio"></div>
-    <div id="resumoRelatorio" style="margin-top: 10px; font-weight: bold;"></div>
+    <input type="text" id="bairro" placeholder="Digite o bairro" />
+    <input type="text" id="cidade" placeholder="Digite a cidade" />
+    <input type="text" id="endereco" placeholder="Digite o endereço" />
+    <input type="text" id="coordenadas" placeholder="Cole aqui a localização (latitude, longitude)" />
+    <button onclick="usarMinhaLocalizacao()">📍 Usar minha localização atual</button>
+    <div id="resultado"></div>
+    <div id="map"></div>
+
+    <div id="relatorio">
+      <h3>Relatório de Viabilidades</h3>
+      <button onclick="mostrarRelatorio()">📊 Ver relatório</button>
+      <div id="tabelaRelatorio"></div>
+      <div id="resumoRelatorio" style="margin-top: 10px; font-weight: bold;"></div>
+    </div>
   </div>
 
   <script>
@@ -179,7 +285,9 @@
         const lat = pos.coords.latitude.toFixed(6);
         const lng = pos.coords.longitude.toFixed(6);
         document.getElementById("coordenadas").value = `${lat}, ${lng}`;
-        diagnosticar();
+        const bairro = document.getElementById("bairro").value.trim();
+        const cidade = document.getElementById("cidade").value.trim();
+        diagnosticar(bairro, cidade);
       }, err => alert("Erro ao obter localização: " + err.message));
     }
 
@@ -191,8 +299,8 @@
     });
   </script>
 
-  <footer style="text-align: center; margin-top: 40px; font-size: 0.9em; color: #666">
-    &copy; 2025 Designed by Carlos Jardel e OpenAI
+  <footer>
+    &copy; 2025 Designed By Jardel e OpenAI - Todos os direitos reservados.
   </footer>
 
 </body>
