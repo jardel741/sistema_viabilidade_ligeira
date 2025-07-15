@@ -33,16 +33,6 @@
       max-height: 60px;
     }
 
-    header .btn-verde {
-      background: #00C853;
-      border: none;
-      padding: 10px 20px;
-      color: white;
-      font-weight: bold;
-      border-radius: 30px;
-      cursor: pointer;
-    }
-
     h2 {
       text-align: center;
       margin: 30px 10px 10px;
@@ -125,17 +115,21 @@
 <body>
 
   <header>
-    <img src="https://i.imgur.com/iV8IyG9.png" alt="Logo Ligeira Telecom" style="max-width: 250px; display: block; margin-bottom: 10px;" />
+    <img src="https://i.imgur.com/iV8IyG9.png" alt="Logo Ligeira Telecom" style="max-width: 250px;" />
   </header>
 
   <div class="container">
-    <h2>Consulta de Viabilidade Ligeira Telecom</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="margin: 0;">Consulta de Viabilidade Ligeira Telecom</h2>
+      <button onclick="novaViabilidade()" style="background: #d32f2f; border: none; padding: 10px 20px; color: white; font-weight: bold; border-radius: 30px; cursor: pointer;">➕ Nova Viabilidade</button>
+    </div>
 
     <input type="text" id="bairro" placeholder="Digite o bairro" />
     <input type="text" id="cidade" placeholder="Digite a cidade" />
     <input type="text" id="endereco" placeholder="Digite o endereço" />
     <input type="text" id="coordenadas" placeholder="Cole aqui a localização (latitude, longitude)" />
     <button onclick="usarMinhaLocalizacao()">📍 Usar minha localização atual</button>
+
     <div id="resultado"></div>
     <div id="map"></div>
 
@@ -175,14 +169,12 @@
     }
 
     fetch("/geojson")
-  .then(res => res.json())
-  .then(data => {
-    geojsonCobertura = data;
-    // Opcional: ainda define o bounds da área mesmo sem mostrar
-    const layer = L.geoJSON(data);
-    map.fitBounds(layer.getBounds());
-    // OBS: layer NÃO é adicionado ao mapa!
-  });
+      .then(res => res.json())
+      .then(data => {
+        geojsonCobertura = data;
+        const layer = L.geoJSON(data);
+        map.fitBounds(layer.getBounds());
+      });
 
     function marcarEndereco() {
       const endereco = document.getElementById("endereco").value.trim();
@@ -244,7 +236,6 @@
           turf.point([lng, lat]),
           { units: "kilometers" }
         );
-
         if (distancia > 0.3) {
           resultado += "<p style='color: red;'>A localização não está de acordo com o endereço, favor corrigir a informação.</p>";
         }
@@ -291,55 +282,71 @@
       }
     }
 
-   function usarMinhaLocalizacao() {
-  if (!navigator.geolocation) return alert("Geolocalização não suportada.");
+    function usarMinhaLocalizacao() {
+      if (!navigator.geolocation) return alert("Geolocalização não suportada.");
 
-  navigator.geolocation.getCurrentPosition(async pos => {
-    const lat = pos.coords.latitude.toFixed(6);
-    const lng = pos.coords.longitude.toFixed(6);
-    document.getElementById("coordenadas").value = `${lat}, ${lng}`;
+      navigator.geolocation.getCurrentPosition(async pos => {
+        const lat = pos.coords.latitude.toFixed(6);
+        const lng = pos.coords.longitude.toFixed(6);
+        document.getElementById("coordenadas").value = `${lat}, ${lng}`;
 
-    try {
-      const res = await fetch(`/geocode?latlng=${lat},${lng}`);
-      const data = await res.json();
+        try {
+          const res = await fetch(`/geocode?latlng=${lat},${lng}`);
+          const data = await res.json();
 
-      if (!data.results?.length) {
-        alert("Não foi possível obter o endereço da localização.");
-        return;
+          if (!data.results?.length) {
+            alert("Não foi possível obter o endereço da localização.");
+            return;
+          }
+
+          const enderecoCompleto = data.results[0];
+          const componentes = enderecoCompleto.address_components;
+
+          const getComponente = tipo => componentes.find(c => c.types.includes(tipo))?.long_name || "";
+
+          const rua = getComponente("route");
+          const bairro = getComponente("sublocality") || getComponente("administrative_area_level_2");
+          const cidade = getComponente("administrative_area_level_2") || getComponente("locality");
+
+          document.getElementById("endereco").value = rua;
+          document.getElementById("bairro").value = bairro;
+          document.getElementById("cidade").value = cidade;
+
+          alert("Endereço identificado automaticamente. Verifique se as informações estão corretas antes de prosseguir.");
+
+          document.getElementById("endereco").dataset.lat = lat;
+          document.getElementById("endereco").dataset.lng = lng;
+
+          diagnosticar(bairro, cidade, lat, lng);
+        } catch (e) {
+          alert("Erro ao tentar identificar o endereço: " + e.message);
+        }
+      }, err => {
+        alert("Erro ao obter localização: " + err.message);
+      });
+    }
+
+    function novaViabilidade() {
+      document.getElementById("bairro").value = "";
+      document.getElementById("cidade").value = "";
+      document.getElementById("endereco").value = "";
+      document.getElementById("coordenadas").value = "";
+      document.getElementById("resultado").innerHTML = "";
+
+      document.getElementById("endereco").dataset.lat = "";
+      document.getElementById("endereco").dataset.lng = "";
+
+      if (marcadorEndereco) {
+        map.removeLayer(marcadorEndereco);
+        marcadorEndereco = null;
+      }
+      if (marcadorCoordenada) {
+        map.removeLayer(marcadorCoordenada);
+        marcadorCoordenada = null;
       }
 
-      const enderecoCompleto = data.results[0];
-      const componentes = enderecoCompleto.address_components;
-
-      // Extrair campos do endereço
-      const getComponente = (tipo) =>
-        componentes.find(c => c.types.includes(tipo))?.long_name || "";
-
-      const rua = getComponente("route");
-      const bairro = getComponente("sublocality") || getComponente("administrative_area_level_2");
-      const cidade = getComponente("administrative_area_level_2") || getComponente("locality");
-
-      // Preencher os campos
-      document.getElementById("endereco").value = rua;
-      document.getElementById("bairro").value = bairro;
-      document.getElementById("cidade").value = cidade;
-
-      // Informar o usuário
-      alert("Endereço identificado automaticamente. Verifique se as informações estão corretas antes de prosseguir.");
-
-      // Salvar as coordenadas do endereço para análise
-      document.getElementById("endereco").dataset.lat = lat;
-      document.getElementById("endereco").dataset.lng = lng;
-
-      diagnosticar(bairro, cidade, lat, lng);
-    } catch (e) {
-      alert("Erro ao tentar identificar o endereço: " + e.message);
+      map.setView([-7.2, -39.3], 13);
     }
-  }, err => {
-    alert("Erro ao obter localização: " + err.message);
-  });
-}
-
 
     document.getElementById("endereco").addEventListener("blur", marcarEndereco);
     document.getElementById("coordenadas").addEventListener("input", () => {
