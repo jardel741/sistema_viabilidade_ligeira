@@ -1,8 +1,8 @@
 from flask import Flask, render_template, jsonify, request, send_from_directory
 import requests
 import os
-from dotenv import load_dotenv
 
+# Carrega variáveis de ambiente do .env
 if os.environ.get("RENDER") is None:
     try:
         from dotenv import load_dotenv
@@ -10,8 +10,6 @@ if os.environ.get("RENDER") is None:
     except:
         pass
 
-
-# Carrega variáveis de ambiente do .env (funciona localmente)
 load_dotenv()
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
@@ -42,12 +40,12 @@ def geocode():
     response = requests.get(url, params=params)
     return jsonify(response.json())
 
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
-
 @app.route('/maps-api.js')
 def maps_api():
     return f"""const script = document.createElement('script');
-script.src = "https://maps.googleapis.com/maps/api/js?key={AIzaSyA_9lJtzaBhEuCNSx9fKicTDsslVgv5_QM}&libraries=places";
+script.src = "https://maps.googleapis.com/maps/api/js?key={GOOGLE_API_KEY}&libraries=places";
 document.head.appendChild(script);""", 200, {'Content-Type': 'application/javascript'}
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
