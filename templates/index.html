@@ -209,16 +209,20 @@
         });
     }
 
-    function diagnosticar(bairro, cidade, latEnd, lngEnd) {
+    function diagnosticar(bairro = "", cidade = "", latEnd = null, lngEnd = null) {
       const coordText = document.getElementById("coordenadas").value.trim();
-      const enderecoLat = parseFloat(document.getElementById("endereco").dataset.lat || latEnd);
-      const enderecoLng = parseFloat(document.getElementById("endereco").dataset.lng || lngEnd);
       const resultadoDiv = document.getElementById("resultado");
 
-      if (!coordText || isNaN(enderecoLat) || isNaN(enderecoLng)) return;
+      if (!coordText) {
+        resultadoDiv.innerHTML = "<p style='color: red;'>⚠️ Coordenadas ausentes.</p>";
+        return;
+      }
 
       const [lat, lng] = coordText.split(/[ ,]+/).map(Number);
-      if (isNaN(lat) || isNaN(lng)) return;
+      if (isNaN(lat) || isNaN(lng)) {
+        resultadoDiv.innerHTML = "<p style='color: red;'>⚠️ Coordenadas inválidas.</p>";
+        return;
+      }
 
       if (marcadorCoordenada) map.removeLayer(marcadorCoordenada);
       marcadorCoordenada = L.marker([lat, lng], { icon: iconeVerde })
@@ -229,19 +233,28 @@
       const ponto = turf.point([lng, lat]);
       const viavel = geojsonCobertura.features.some(f => turf.booleanPointInPolygon(ponto, f));
 
-      const distancia = turf.distance(
-        turf.point([enderecoLng, enderecoLat]),
-        turf.point([lng, lat]),
-        { units: "kilometers" }
-      );
+      const enderecoLat = parseFloat(document.getElementById("endereco").dataset.lat || latEnd || "NaN");
+      const enderecoLng = parseFloat(document.getElementById("endereco").dataset.lng || lngEnd || "NaN");
 
       let resultado = "";
-      if (distancia > 0.3) {
-        resultado += `<p style="color: red;">A localização não está de acordo com o endereço, favor corrigir a informação.</p>`;
+
+      if (!isNaN(enderecoLat) && !isNaN(enderecoLng)) {
+        const distancia = turf.distance(
+          turf.point([enderecoLng, enderecoLat]),
+          turf.point([lng, lat]),
+          { units: "kilometers" }
+        );
+
+        if (distancia > 0.3) {
+          resultado += "<p style='color: red;'>A localização não está de acordo com o endereço, favor corrigir a informação.</p>";
+        }
+      } else {
+        resultado += "<p style='color: orange;'>⚠️ O endereço não foi adicionado nesta viabilidade, verifique as informações.</p>";
       }
+
       resultado += viavel
-        ? `<p style="color: green;">Cobertura disponível nesse local.</p>`
-        : `<p style="color: red;">Sem cobertura nesse local.</p>`;
+        ? "<p style='color: green;'>✅ Cobertura disponível nesse local.</p>"
+        : "<p style='color: red;'>❌ Sem cobertura nesse local.</p>";
 
       resultadoDiv.innerHTML = resultado;
 
