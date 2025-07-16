@@ -214,6 +214,50 @@
 
       map.setView([-7.2, -39.3], 13);
     }
+	function usarMinhaLocalizacao() {
+  if (!navigator.geolocation) return alert("Geolocalização não suportada.");
+
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const lat = pos.coords.latitude.toFixed(6);
+    const lng = pos.coords.longitude.toFixed(6);
+    document.getElementById("coordenadas").value = `${lat}, ${lng}`;
+
+    try {
+      const res = await fetch(`/geocode?latlng=${lat},${lng}`);
+      const data = await res.json();
+
+      if (!data.results?.length) {
+        alert("Não foi possível obter o endereço da localização.");
+        return;
+      }
+
+      const enderecoCompleto = data.results[0];
+      const componentes = enderecoCompleto.address_components;
+
+      const getComponente = tipo => componentes.find(c => c.types.includes(tipo))?.long_name || "";
+
+      const rua = getComponente("route");
+      const bairro = getComponente("sublocality") || getComponente("administrative_area_level_2");
+      const cidade = getComponente("administrative_area_level_2") || getComponente("locality");
+
+      document.getElementById("endereco").value = rua;
+      document.getElementById("bairro").value = bairro;
+      document.getElementById("cidade").value = cidade;
+
+      alert("Endereço identificado automaticamente. Verifique se as informações estão corretas antes de prosseguir.");
+
+      document.getElementById("endereco").dataset.lat = lat;
+      document.getElementById("endereco").dataset.lng = lng;
+
+      diagnosticar(bairro, cidade, lat, lng);
+    } catch (e) {
+      alert("Erro ao tentar identificar o endereço: " + e.message);
+    }
+  }, err => {
+    alert("Erro ao obter localização: " + err.message);
+  });
+}
+
   </script>
 
   <footer>

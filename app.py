@@ -5,7 +5,7 @@ import time
 import requests
 from flask import Flask, render_template, jsonify, request, send_from_directory
 
-# Só carrega dotenv localmente
+# Carrega variáveis de ambiente localmente se não estiver em produção
 if os.environ.get("RENDER") is None:
     from dotenv import load_dotenv
     load_dotenv()
@@ -75,8 +75,8 @@ def get_todas_ctos(token_path='token.txt', host='central.ligeira.net'):
             response = requests.post(url, json=payload, headers=headers)
             response.raise_for_status()
             data = response.json()
-
             registros = data.get("registros", [])
+
             if not registros:
                 break
 
@@ -94,6 +94,7 @@ def get_todas_ctos(token_path='token.txt', host='central.ligeira.net'):
             print(f"[ERRO] Falha na página {page}: {e}")
             break
 
+    print(f"[INFO] Total de CTOs obtidas: {len(resultado)}")
     return resultado
 
 @app.route('/ctos')
