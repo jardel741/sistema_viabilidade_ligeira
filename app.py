@@ -22,15 +22,6 @@ def home():
 def geojson():
     return send_from_directory('static', 'atuacao_link_cariri.geojson', mimetype='application/json')
 
-@app.route('/ctos')
-def ctos():
-    try:
-        with open("static/ctos.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({"erro": f"Erro ao carregar CTOs: {str(e)}"}), 500
-
 @app.route('/maps-api.js')
 def maps_api():
     return f"""const script = document.createElement('script');
@@ -53,7 +44,7 @@ def geocode():
     response = requests.get(url, params=params)
     return jsonify(response.json())
 
-def get_todas_ctos(token_path='token.txt', host='central.ligeira.net', output_file='static/ctos.json'):
+def get_todas_ctos(token_path='token.txt', host='central.ligeira.net'):
     with open(token_path, "r") as f:
         token = f.read().strip()
 
@@ -86,7 +77,6 @@ def get_todas_ctos(token_path='token.txt', host='central.ligeira.net', output_fi
             data = response.json()
 
             registros = data.get("registros", [])
-
             if not registros:
                 break
 
@@ -104,10 +94,15 @@ def get_todas_ctos(token_path='token.txt', host='central.ligeira.net', output_fi
             print(f"[ERRO] Falha na página {page}: {e}")
             break
 
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(resultado, f, indent=4, ensure_ascii=False)
-
     return resultado
+
+@app.route('/ctos')
+def listar_ctos():
+    try:
+        dados = get_todas_ctos()
+        return jsonify(dados)
+    except Exception as e:
+        return jsonify({"erro": f"Falha ao buscar CTOs do IXC: {str(e)}"}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
