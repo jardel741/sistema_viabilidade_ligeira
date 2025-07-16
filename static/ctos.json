@@ -1,0 +1,62 @@
+{
+  "1": {
+    "id": "1",
+    "descricao": "CTO Centro Juazeiro",
+    "latitude": "-7.210500",
+    "longitude": "-39.315600"
+  },
+  "2": {
+    "id": "2",
+    "descricao": "CTO Pirajá",
+    "latitude": "-7.226900",
+    "longitude": "-39.316200"
+  },
+  "3": {
+    "id": "3",
+    "descricao": "CTO Triângulo",
+    "latitude": "-7.220300",
+    "longitude": "-39.303800"
+  },
+  "4": {
+    "id": "4",
+    "descricao": "CTO Lagoa Seca",
+    "latitude": "-7.228800",
+    "longitude": "-39.296500"
+  },
+  "5": {
+    "id": "5",
+    "descricao": "CTO Novo Juazeiro",
+    "latitude": "-7.229900",
+    "longitude": "-39.323700"
+  },
+  "6": {
+    "id": "6",
+    "descricao": "CTO Centro Crato",
+    "latitude": "-7.230100",
+    "longitude": "-39.410200"
+  },
+  "7": {
+    "id": "7",
+    "descricao": "CTO Muriti",
+    "latitude": "-7.248700",
+    "longitude": "-39.392100"
+  },
+  "8": {
+    "id": "8",
+    "descricao": "CTO Pimenta",
+    "latitude": "-7.245300",
+    "longitude": "-39.403900"
+  },
+  "9": {
+    "id": "9",
+    "descricao": "CTO São Miguel",
+    "latitude": "-7.240400",
+    "longitude": "-39.421800"
+  },
+  "10": {
+    "id": "10",
+    "descricao": "CTO Vila Alta",
+    "latitude": "-7.233900",
+    "longitude": "-39.407600"
+  }
+}
