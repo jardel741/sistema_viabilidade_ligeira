@@ -23,11 +23,11 @@ def geojson():
     return send_from_directory('static', 'atuacao_link_cariri.geojson', mimetype='application/json')
 
 @app.route('/ctos')
-def listar_ctos():
+def ctos():
     try:
         with open("static/ctos.json", "r", encoding="utf-8") as f:
-            dados = json.load(f)
-        return jsonify(dados)
+            data = json.load(f)
+        return jsonify(data)
     except Exception as e:
         return jsonify({"erro": f"Erro ao carregar CTOs: {str(e)}"}), 500
 
