@@ -18,6 +18,7 @@
       background-color: #FFC107;
       color: #333;
     }
+
     header {
       background: #6200EA;
       color: white;
@@ -27,19 +28,23 @@
       padding: 15px 20px;
       flex-wrap: wrap;
     }
+
     header img {
       max-height: 60px;
     }
+
     h2 {
       text-align: center;
       margin: 30px 10px 10px;
       font-size: 2rem;
     }
+
     .container {
       padding: 20px;
       max-width: 900px;
       margin: auto;
     }
+
     input, select {
       padding: 10px;
       margin-top: 10px;
@@ -48,6 +53,7 @@
       border: 1px solid #ccc;
       font-size: 1rem;
     }
+
     button {
       padding: 10px;
       margin-top: 10px;
@@ -57,6 +63,7 @@
       font-weight: bold;
       cursor: pointer;
     }
+
     #map {
       height: 400px;
       margin-top: 20px;
@@ -64,26 +71,32 @@
       border-radius: 8px;
       border: 2px solid #6200EA;
     }
+
     #resultado {
       margin-top: 20px;
       font-size: 1.1rem;
     }
+
     #relatorio {
       margin-top: 40px;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
     }
+
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
       text-align: left;
     }
+
     th {
       background-color: #eee;
     }
+
     .download-link {
       display: inline-block;
       margin-top: 10px;
@@ -91,6 +104,7 @@
       text-decoration: underline;
       cursor: pointer;
     }
+
     footer {
       background: #6200EA;
       color: white;
@@ -98,6 +112,7 @@
       padding: 15px;
       margin-top: 50px;
     }
+
     .botao-nova-viabilidade {
       background-color: #FFFFFF;
       color: #000000;
@@ -142,6 +157,7 @@
   </div>
 
   <script>
+    let ctosVisiveis = false;
     const map = L.map("map").setView([-7.2, -39.3], 13);
     let marcadorEndereco = null;
     let marcadorCoordenada = null;
@@ -149,8 +165,19 @@
     let geojsonCobertura;
     const consultas = [];
 
-    const iconeAmarelo = new L.Icon({ iconUrl: "https://maps.google.com/mapfiles/ms/icons/yellow-dot.png", iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32] });
-    const iconeVerde = new L.Icon({ iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png", iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32] });
+    const iconeAmarelo = new L.Icon({
+      iconUrl: "https://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32]
+    });
+
+    const iconeVerde = new L.Icon({
+      iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32]
+    });
 
     try {
       L.gridLayer.googleMutant({ maxZoom: 24, type: "satellite" }).addTo(map);
@@ -172,6 +199,7 @@
       if (camadaCTOs) {
         map.removeLayer(camadaCTOs);
         camadaCTOs = null;
+        ctosVisiveis = false;
         btn.innerText = "📡 Ver CTOs";
         return;
       }
@@ -189,6 +217,7 @@
             }
           });
           camadaCTOs.addTo(map);
+          ctosVisiveis = true;
           btn.innerText = "📡 Esconder CTOs";
         });
     }
@@ -202,62 +231,23 @@
       document.getElementById("endereco").dataset.lat = "";
       document.getElementById("endereco").dataset.lng = "";
 
-      if (marcadorEndereco) map.removeLayer(marcadorEndereco);
-      if (marcadorCoordenada) map.removeLayer(marcadorCoordenada);
+      if (marcadorEndereco) {
+        map.removeLayer(marcadorEndereco);
+        marcadorEndereco = null;
+      }
+      if (marcadorCoordenada) {
+        map.removeLayer(marcadorCoordenada);
+        marcadorCoordenada = null;
+      }
       if (camadaCTOs) {
         map.removeLayer(camadaCTOs);
         camadaCTOs = null;
         document.getElementById("botao-ctos").innerText = "📡 Ver CTOs";
+        ctosVisiveis = false;
       }
-      marcadorEndereco = null;
-      marcadorCoordenada = null;
 
       map.setView([-7.2, -39.3], 13);
     }
-	function usarMinhaLocalizacao() {
-  if (!navigator.geolocation) return alert("Geolocalização não suportada.");
-
-  navigator.geolocation.getCurrentPosition(async pos => {
-    const lat = pos.coords.latitude.toFixed(6);
-    const lng = pos.coords.longitude.toFixed(6);
-    document.getElementById("coordenadas").value = `${lat}, ${lng}`;
-
-    try {
-      const res = await fetch(`/geocode?latlng=${lat},${lng}`);
-      const data = await res.json();
-
-      if (!data.results?.length) {
-        alert("Não foi possível obter o endereço da localização.");
-        return;
-      }
-
-      const enderecoCompleto = data.results[0];
-      const componentes = enderecoCompleto.address_components;
-
-      const getComponente = tipo => componentes.find(c => c.types.includes(tipo))?.long_name || "";
-
-      const rua = getComponente("route");
-      const bairro = getComponente("sublocality") || getComponente("administrative_area_level_2");
-      const cidade = getComponente("administrative_area_level_2") || getComponente("locality");
-
-      document.getElementById("endereco").value = rua;
-      document.getElementById("bairro").value = bairro;
-      document.getElementById("cidade").value = cidade;
-
-      alert("Endereço identificado automaticamente. Verifique se as informações estão corretas antes de prosseguir.");
-
-      document.getElementById("endereco").dataset.lat = lat;
-      document.getElementById("endereco").dataset.lng = lng;
-
-      diagnosticar(bairro, cidade, lat, lng);
-    } catch (e) {
-      alert("Erro ao tentar identificar o endereço: " + e.message);
-    }
-  }, err => {
-    alert("Erro ao obter localização: " + err.message);
-  });
-}
-
   </script>
 
   <footer>
