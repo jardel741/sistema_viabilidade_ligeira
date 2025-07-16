@@ -23,11 +23,11 @@ def geojson():
     return send_from_directory('static', 'atuacao_link_cariri.geojson', mimetype='application/json')
 
 @app.route('/ctos')
-def ctos():
+def listar_ctos():
     try:
-        with open("ctos.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return jsonify(data)
+        with open("static/ctos.json", "r", encoding="utf-8") as f:
+            dados = json.load(f)
+        return jsonify(dados)
     except Exception as e:
         return jsonify({"erro": f"Erro ao carregar CTOs: {str(e)}"}), 500
 
@@ -53,7 +53,7 @@ def geocode():
     response = requests.get(url, params=params)
     return jsonify(response.json())
 
-def get_todas_ctos(token_path='token.txt', host='central.ligeira.net', output_file='ctos.json'):
+def get_todas_ctos(token_path='token.txt', host='central.ligeira.net', output_file='static/ctos.json'):
     with open(token_path, "r") as f:
         token = f.read().strip()
 
@@ -108,16 +108,6 @@ def get_todas_ctos(token_path='token.txt', host='central.ligeira.net', output_fi
         json.dump(resultado, f, indent=4, ensure_ascii=False)
 
     return resultado
-    
-    @app.route('/ctos')
-def listar_ctos():
-    try:
-        with open("ctos.json", "r", encoding="utf-8") as f:
-            dados = json.load(f)
-        return jsonify(dados)
-    except Exception as e:
-        return jsonify({"erro": f"Falha ao carregar CTOs: {str(e)}"}), 500
-    
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
