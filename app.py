@@ -1,8 +1,8 @@
 import os
-import requests
-import base64
 import json
+import base64
 import time
+import requests
 from flask import Flask, render_template, jsonify, request, send_from_directory
 
 # Só carrega dotenv localmente
@@ -11,25 +11,31 @@ if os.environ.get("RENDER") is None:
     load_dotenv()
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 @app.route('/')
 def home():
     return render_template("index.html")
 
-
 @app.route('/geojson')
 def geojson():
     return send_from_directory('static', 'atuacao_link_cariri.geojson', mimetype='application/json')
 
+@app.route('/ctos')
+def ctos():
+    try:
+        with open("ctos.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"erro": f"Erro ao carregar CTOs: {str(e)}"}), 500
 
 @app.route('/maps-api.js')
 def maps_api():
     return f"""const script = document.createElement('script');
 script.src = "https://maps.googleapis.com/maps/api/js?key={GOOGLE_API_KEY}&libraries=places";
 document.head.appendChild(script);""", 200, {'Content-Type': 'application/javascript'}
-
 
 @app.route('/geocode')
 def geocode():
@@ -47,18 +53,7 @@ def geocode():
     response = requests.get(url, params=params)
     return jsonify(response.json())
 
-
-@app.route('/listar-ctos')
-def listar_ctos():
-    try:
-        resultado = get_todas_ctos()
-        return jsonify({"status": "sucesso", "total": len(resultado)})
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 500
-
-
 def get_todas_ctos(token_path='token.txt', host='central.ligeira.net', output_file='ctos.json'):
-    # Lê o token do arquivo
     with open(token_path, "r") as f:
         token = f.read().strip()
 
@@ -85,30 +80,44 @@ def get_todas_ctos(token_path='token.txt', host='central.ligeira.net', output_fi
             'sortorder': 'asc'
         }
 
-        response = requests.post(url, json=payload, headers=headers)
-        response.raise_for_status()
-        data = response.json()
+        try:
+            response = requests.post(url, json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
 
-        registros = data.get("registros", [])
+            registros = data.get("registros", [])
 
-        if not registros:
+            if not registros:
+                break
+
+            for item in registros:
+                id_cto = str(item.get("id", ""))
+                resultado[id_cto] = item
+
+            if len(registros) < registros_por_pagina:
+                break
+
+            page += 1
+            time.sleep(0.3)
+
+        except requests.exceptions.RequestException as e:
+            print(f"[ERRO] Falha na página {page}: {e}")
             break
-
-        for item in registros:
-            id_cto = str(item.get("id", ""))
-            resultado[id_cto] = item
-
-        if len(registros) < registros_por_pagina:
-            break
-
-        page += 1
-        time.sleep(0.3)
 
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(resultado, f, indent=4, ensure_ascii=False)
 
     return resultado
-
+    
+    @app.route('/ctos')
+def listar_ctos():
+    try:
+        with open("ctos.json", "r", encoding="utf-8") as f:
+            dados = json.load(f)
+        return jsonify(dados)
+    except Exception as e:
+        return jsonify({"erro": f"Falha ao carregar CTOs: {str(e)}"}), 500
+    
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
