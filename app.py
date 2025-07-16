@@ -5,7 +5,7 @@ import time
 import requests
 from flask import Flask, render_template, jsonify, request, send_from_directory
 
-# Só carrega dotenv localmente
+# Carrega variáveis de ambiente locais, exceto no Render
 if os.environ.get("RENDER") is None:
     from dotenv import load_dotenv
     load_dotenv()
@@ -95,8 +95,6 @@ def get_todas_ctos(token_path='token.txt', host='central.ligeira.net'):
             break
 
     return resultado
-        print(f"[INFO] Total de CTOs obtidas: {len(resultado)}")
-
 
 @app.route('/ctos')
 def listar_ctos():
@@ -109,4 +107,3 @@ def listar_ctos():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-  

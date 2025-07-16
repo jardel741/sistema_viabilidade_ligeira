@@ -1,1 +1,1 @@
-// viabilidade.js será preenchido em seguida pelo modelo
+// Aqui vai o conteúdo JS extraído do HTML original
