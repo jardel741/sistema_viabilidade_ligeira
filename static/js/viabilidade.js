@@ -1,4 +1,3 @@
-// static/viabilidade.js
 
 let ctosVisiveis = false;
 const map = L.map("map").setView([-7.2, -39.3], 13);
@@ -32,7 +31,6 @@ try {
   console.warn("Erro ao carregar GoogleMutant. Revertendo para OSM.", error);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 }
-
 
 fetch("/geojson")
   .then(res => res.json())
@@ -97,4 +95,64 @@ function novaViabilidade() {
 
   map.setView([-7.2, -39.3], 13);
 }
-// Aqui vai o conteúdo JS extraído do HTML original
+
+function usarMinhaLocalizacao() {
+  if (!navigator.geolocation) {
+    alert("Geolocalização não é suportada pelo seu navegador.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition((position) => {
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
+
+    if (marcadorCoordenada) {
+      map.removeLayer(marcadorCoordenada);
+    }
+
+    marcadorCoordenada = L.marker([lat, lng], { icon: iconeVerde })
+      .addTo(map)
+      .bindPopup("Sua localização")
+      .openPopup();
+
+    map.setView([lat, lng], 17);
+    document.getElementById("coordenadas").value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  }, () => {
+    alert("Não foi possível obter sua localização.");
+  });
+}
+
+window.initAutocomplete = () => {
+  const enderecoInput = document.getElementById("endereco");
+  const autocomplete = new google.maps.places.Autocomplete(enderecoInput);
+  autocomplete.addListener("place_changed", () => {
+    const place = autocomplete.getPlace();
+    if (!place.geometry || !place.geometry.location) return;
+
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+
+    if (marcadorEndereco) {
+      map.removeLayer(marcadorEndereco);
+    }
+
+    marcadorEndereco = L.marker([lat, lng], { icon: iconeAmarelo })
+      .addTo(map)
+      .bindPopup("Endereço selecionado")
+      .openPopup();
+
+    map.setView([lat, lng], 17);
+
+    enderecoInput.dataset.lat = lat;
+    enderecoInput.dataset.lng = lng;
+    document.getElementById("coordenadas").value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  });
+};
+
+window.onload = () => {
+  if (typeof google !== 'undefined') {
+    initAutocomplete();
+  } else {
+    console.warn("Google Maps API não carregada.");
+  }
+};
