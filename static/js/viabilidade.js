@@ -23,10 +23,16 @@ const iconeVerde = new L.Icon({
 });
 
 try {
-  L.gridLayer.googleMutant({ maxZoom: 24, type: "satellite" }).addTo(map);
-} catch {
+  const googleMutantLayer = L.gridLayer.googleMutant({
+    maxZoom: 24,
+    type: "satellite"
+  });
+  googleMutantLayer.addTo(map);
+} catch (error) {
+  console.warn("Erro ao carregar GoogleMutant. Revertendo para OSM.", error);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 }
+
 
 fetch("/geojson")
   .then(res => res.json())
