@@ -5,7 +5,6 @@ import time
 import requests
 from flask import Flask, render_template, jsonify, request, send_from_directory
 
-# Carrega variáveis de ambiente locais, exceto no Render
 if os.environ.get("RENDER") is None:
     from dotenv import load_dotenv
     load_dotenv()
