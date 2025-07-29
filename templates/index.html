@@ -4,151 +4,46 @@
   <meta charset="UTF-8" />
   <title>Consulta de Viabilidade Ligeira Telecom</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.gridlayer.googlemutant@0.12.1/Leaflet.GoogleMutant.js"></script>
   <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
   <script src="/maps-api.js"></script>
   <script src="/static/js/viabilidade.js" defer></script>
-
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      background-color: #FFC107;
-      color: #333;
-    }
-
-    header {
-      background: #6200EA;
-      color: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px 20px;
-      flex-wrap: wrap;
-    }
-
-    header img {
-      max-height: 60px;
-    }
-
-    h2 {
-      text-align: center;
-      margin: 30px 10px 10px;
-      font-size: 2rem;
-    }
-
-    .container {
-      padding: 20px;
-      max-width: 900px;
-      margin: auto;
-    }
-
-    input, select {
-      padding: 10px;
-      margin-top: 10px;
-      width: 100%;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
-    }
-
-    button {
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 6px;
-      border: none;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    #map {
-      height: 400px;
-      margin-top: 20px;
-      width: 100%;
-      border-radius: 8px;
-      border: 2px solid #6200EA;
-    }
-
-    #resultado {
-      margin-top: 20px;
-      font-size: 1.1rem;
-    }
-
-    #relatorio {
-      margin-top: 40px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-
-    th {
-      background-color: #eee;
-    }
-
-    .download-link {
-      display: inline-block;
-      margin-top: 10px;
-      color: blue;
-      text-decoration: underline;
-      cursor: pointer;
-    }
-
-    footer {
-      background: #6200EA;
-      color: white;
-      text-align: center;
-      padding: 15px;
-      margin-top: 50px;
-    }
-
-    .botao-nova-viabilidade {
-      background-color: #FFFFFF;
-      color: #000000;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      border: 1px solid #ccc;
-      font-size: 0.9rem;
-      width: auto;
-      display: inline-block;
-      margin-top: 10px;
-    }
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #FFC107; color: #333; }
+    header { background: #6200EA; color: white; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; flex-wrap: wrap; }
+    header img { max-height: 60px; }
+    h2 { text-align: center; margin: 30px 10px 10px; font-size: 2rem; }
+    .container { padding: 20px; max-width: 900px; margin: auto; }
+    input, select, button { padding: 10px; margin-top: 10px; width: 100%; border-radius: 6px; font-size: 1rem; }
+    button { border: none; font-weight: bold; cursor: pointer; }
+    #map { height: 400px; margin-top: 20px; width: 100%; border-radius: 8px; border: 2px solid #6200EA; }
+    #resultado { margin-top: 20px; font-size: 1.1rem; }
+    #relatorio { margin-top: 40px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #eee; }
+    .download-link { display: inline-block; margin-top: 10px; color: blue; text-decoration: underline; cursor: pointer; }
+    footer { background: #6200EA; color: white; text-align: center; padding: 15px; margin-top: 50px; }
+    .botao-nova-viabilidade { background-color: #FFFFFF; color: #000000; border: 1px solid #ccc; font-size: 0.9rem; width: auto; display: inline-block; margin-top: 10px; }
   </style>
 </head>
 <body>
   <header>
     <img src="https://i.imgur.com/iV8IyG9.png" alt="Logo Ligeira Telecom" style="max-width: 250px;" />
   </header>
-
   <div class="container">
     <h2>Consulta de Viabilidade Ligeira Telecom</h2>
-
     <input type="text" id="bairro" placeholder="Digite o bairro" />
     <input type="text" id="cidade" placeholder="Digite a cidade" />
     <input type="text" id="endereco" placeholder="Digite o endereço" />
     <input type="text" id="coordenadas" placeholder="Cole aqui a localização (latitude, longitude)" />
-
     <button onclick="usarMinhaLocalizacao()">📍 Usar minha localização atual</button>
     <button class="botao-nova-viabilidade" onclick="novaViabilidade()">➕ Nova Viabilidade</button>
     <button id="botao-ctos" onclick="alternarCTOs()">📡 Ver CTOs</button>
-
     <div id="resultado"></div>
     <div id="map"></div>
-
     <div id="relatorio">
       <h3>Relatório de Viabilidades</h3>
       <button onclick="mostrarRelatorio()">📊 Ver relatório</button>
@@ -156,7 +51,6 @@
       <div id="resumoRelatorio" style="margin-top: 10px; font-weight: bold;"></div>
     </div>
   </div>
-
   <footer>
     &copy; 2025 Designed By Jardel e OpenAI - Todos os direitos reservados.
   </footer>
