@@ -1,11 +1,10 @@
 import os
 import json
-import base64
 import time
 import requests
 from flask import Flask, render_template, jsonify, request, send_from_directory
 
-# Carregar .env apenas fora do Render
+# Carregar .env localmente
 if os.environ.get("RENDER") is None:
     from dotenv import load_dotenv
     load_dotenv()
@@ -13,7 +12,7 @@ if os.environ.get("RENDER") is None:
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-IXC_API_TOKEN = os.getenv("IXC_API_TOKEN")  # <- Token do IXC via variável de ambiente
+IXC_TOKEN = os.getenv("IXC_TOKEN")  # <- Token da IXC no formato novo (Bearer)
 
 @app.route('/')
 def home():
@@ -48,15 +47,15 @@ def geocode():
     return jsonify(response.json())
 
 def get_todas_ctos(host='central.ligeira.net'):
-    token = IXC_API_TOKEN
+    token = IXC_TOKEN
     if not token:
-        raise Exception("Token do IXC não foi definido na variável de ambiente!")
+        raise Exception("Token da IXC não foi definido na variável de ambiente!")
 
     url = f"https://{host}/webservice/v1/rad_caixa_ftth"
 
     headers = {
         'ixcsoft': 'listar',
-        'Authorization': 'Basic {}'.format(base64.b64encode(token.encode('utf-8')).decode('utf-8')),
+        'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json'
     }
 
