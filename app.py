@@ -1,10 +1,11 @@
 import os
 import json
+import base64
 import time
 import requests
 from flask import Flask, render_template, jsonify, request, send_from_directory
 
-# Carregar .env localmente
+# Carregar variáveis locais apenas fora do Render
 if os.environ.get("RENDER") is None:
     from dotenv import load_dotenv
     load_dotenv()
@@ -12,7 +13,7 @@ if os.environ.get("RENDER") is None:
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-IXC_TOKEN = os.getenv("IXC_TOKEN")  # <- Token da IXC no formato novo (Bearer)
+IXC_TOKEN = os.getenv("IXC_TOKEN")  # <- Correto agora
 
 @app.route('/')
 def home():
@@ -46,16 +47,17 @@ def geocode():
     response = requests.get(url, params=params)
     return jsonify(response.json())
 
+
 def get_todas_ctos(host='central.ligeira.net'):
     token = IXC_TOKEN
     if not token:
-        raise Exception("Token da IXC não foi definido na variável de ambiente!")
+        raise Exception("Token do IXC não foi definido na variável de ambiente!")
 
     url = f"https://{host}/webservice/v1/rad_caixa_ftth"
 
     headers = {
         'ixcsoft': 'listar',
-        'Authorization': f'Bearer {token}',
+        'Authorization': f'Basic {base64.b64encode(token.encode()).decode()}',
         'Content-Type': 'application/json'
     }
 
@@ -94,7 +96,7 @@ def get_todas_ctos(host='central.ligeira.net'):
             time.sleep(0.3)
 
         except requests.exceptions.RequestException as e:
-            print(f"[ERRO] Falha na página {page}: {e}")
+            print(f"[ERRO] Página {page}: {e}")
             break
 
     return resultado
