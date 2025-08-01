@@ -171,3 +171,40 @@ function novaViabilidade() {
 
   map.setView([-7.2, -39.3], 13);
 }
+function inicializarAutocomplete() {
+  const inputEndereco = document.getElementById("endereco");
+  if (!google || !google.maps || !google.maps.places) {
+    console.error("Google Places API não carregada corretamente.");
+    return;
+  }
+
+  const autocomplete = new google.maps.places.Autocomplete(inputEndereco);
+  autocomplete.addListener("place_changed", () => {
+    const place = autocomplete.getPlace();
+    if (!place.geometry) {
+      alert("Endereço não encontrado.");
+      return;
+    }
+
+    const { lat, lng } = place.geometry.location;
+    const latitude = lat();
+    const longitude = lng();
+    document.getElementById("coordenadas").value = `${latitude}, ${longitude}`;
+    document.getElementById("endereco").dataset.lat = latitude;
+    document.getElementById("endereco").dataset.lng = longitude;
+
+    if (marcadorEndereco) {
+      map.removeLayer(marcadorEndereco);
+    }
+
+    marcadorEndereco = L.marker([latitude, longitude], { icon: iconeAmarelo })
+      .addTo(map)
+      .bindPopup("Endereço encontrado pelo Google")
+      .openPopup();
+
+    map.setView([latitude, longitude], 17);
+  });
+}
+
+// Aguarda o carregamento da API do Google Maps antes de iniciar o autocomplete
+window.initAutocomplete = inicializarAutocomplete;

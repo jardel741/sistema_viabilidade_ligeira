@@ -24,8 +24,11 @@ def geojson():
 @app.route('/maps-api.js')
 def maps_api():
     return f"""const script = document.createElement('script');
-script.src = "https://maps.googleapis.com/maps/api/js?key={GOOGLE_API_KEY}&libraries=places";
+script.src = "https://maps.googleapis.com/maps/api/js?key={GOOGLE_API_KEY}&libraries=places&callback=initAutocomplete";
+script.async = true;
+script.defer = true;
 document.head.appendChild(script);""", 200, {'Content-Type': 'application/javascript'}
+
 
 @app.route('/geocode')
 def geocode():
