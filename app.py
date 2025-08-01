@@ -5,6 +5,7 @@ import time
 import requests
 from flask import Flask, render_template, jsonify, request, send_from_directory
 
+# Carregar .env apenas fora do Render
 if os.environ.get("RENDER") is None:
     from dotenv import load_dotenv
     load_dotenv()
@@ -12,6 +13,7 @@ if os.environ.get("RENDER") is None:
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+IXC_API_TOKEN = os.getenv("IXC_API_TOKEN")  # <- Token do IXC via variável de ambiente
 
 @app.route('/')
 def home():
@@ -29,7 +31,6 @@ script.async = true;
 script.defer = true;
 document.head.appendChild(script);""", 200, {'Content-Type': 'application/javascript'}
 
-
 @app.route('/geocode')
 def geocode():
     address = request.args.get("address")
@@ -46,9 +47,10 @@ def geocode():
     response = requests.get(url, params=params)
     return jsonify(response.json())
 
-def get_todas_ctos(token_path='token.txt', host='central.ligeira.net'):
-    with open(token_path, "r") as f:
-        token = f.read().strip()
+def get_todas_ctos(host='central.ligeira.net'):
+    token = IXC_API_TOKEN
+    if not token:
+        raise Exception("Token do IXC não foi definido na variável de ambiente!")
 
     url = f"https://{host}/webservice/v1/rad_caixa_ftth"
 
