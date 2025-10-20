@@ -204,7 +204,9 @@ function inicializarAutocomplete() {
 
     map.setView([latitude, longitude], 17);
   });
-  // -----------------------------
+}
+
+// -----------------------------
 // Função de régua de medição
 // -----------------------------
 let reguaAtiva = false;
@@ -257,8 +259,6 @@ function calcularDistancia(pontos) {
     total += pontos[i - 1].distanceTo(pontos[i]);
   }
   return total;
-}
-
 }
 
 // Aguarda o carregamento da API do Google Maps antes de iniciar o autocomplete
