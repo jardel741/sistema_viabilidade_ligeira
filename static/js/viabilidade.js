@@ -204,6 +204,61 @@ function inicializarAutocomplete() {
 
     map.setView([latitude, longitude], 17);
   });
+  // -----------------------------
+// Função de régua de medição
+// -----------------------------
+let reguaAtiva = false;
+let pontosRegua = [];
+let linhaRegua = null;
+
+const botaoRegua = document.getElementById("botao-regua");
+
+botaoRegua.addEventListener("click", () => {
+  reguaAtiva = !reguaAtiva;
+  if (reguaAtiva) {
+    botaoRegua.innerText = "❌ Sair da régua";
+    alert("Modo régua ativado! Clique no mapa para marcar os pontos.");
+  } else {
+    botaoRegua.innerText = "📏 Medir distância";
+    if (linhaRegua) {
+      map.removeLayer(linhaRegua);
+      linhaRegua = null;
+    }
+    pontosRegua = [];
+  }
+});
+
+map.on("click", (e) => {
+  if (!reguaAtiva) return;
+
+  pontosRegua.push(e.latlng);
+
+  if (pontosRegua.length > 1) {
+    if (linhaRegua) map.removeLayer(linhaRegua);
+
+    linhaRegua = L.polyline(pontosRegua, {
+      color: "red",
+      weight: 3,
+      opacity: 0.8
+    }).addTo(map);
+
+    const distancia = calcularDistancia(pontosRegua);
+    const texto = distancia >= 1000
+      ? `${(distancia / 1000).toFixed(2)} km`
+      : `${distancia.toFixed(1)} m`;
+
+    linhaRegua.bindPopup(`Distância total: ${texto}`).openPopup();
+  }
+});
+
+function calcularDistancia(pontos) {
+  let total = 0;
+  for (let i = 1; i < pontos.length; i++) {
+    total += pontos[i - 1].distanceTo(pontos[i]);
+  }
+  return total;
+}
+
 }
 
 // Aguarda o carregamento da API do Google Maps antes de iniciar o autocomplete
